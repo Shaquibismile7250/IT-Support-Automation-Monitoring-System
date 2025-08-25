@@ -1,0 +1,186 @@
+# Create a complete, GitHub-ready project for a Technical Support Engineer: 
+# "it-support-automation"
+import os, json, textwrap, zipfile, pathlib, datetime
+
+base = "/mnt/data/it-support-automation"
+os.makedirs(base, exist_ok=True)
+paths = [
+    "src",
+    "src/data",
+    "src/logs",
+    "src/templates",
+]
+for p in paths:
+    os.makedirs(os.path.join(base, p), exist_ok=True)
+
+# .gitignore
+gitignore = textwrap.dedent("""
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.env
+
+# Logs
+logs/
+src/logs/
+*.log
+
+# Data
+src/data/*.jsonl
+src/data/*.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Virtual envs
+.venv/
+env/
+venv/
+
+# IDE
+.vscode/
+.idea/
+""")
+
+# LICENSE (MIT)
+license_text = textwrap.dedent("""
+MIT License
+
+Copyright (c) {year}
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+""".format(year=datetime.date.today().year))
+
+# requirements.txt
+requirements = textwrap.dedent("""
+psutil
+requests
+python-dotenv
+PyYAML
+""")
+
+# .env.example
+env_example = textwrap.dedent("""
+# Copy this file to .env and fill values
+
+# Ticketing / Webhook
+API_URL=https://example.com/api/tickets
+API_TOKEN=your_api_token_here
+
+# Slack (Incoming Webhook URL)
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/xxx/yyy/zzz
+
+# SMTP (for email alerts & reports)
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=alerts@example.com
+SMTP_PASS=your_smtp_password
+ALERT_EMAIL_FROM=alerts@example.com
+ALERT_EMAIL_TO=support@example.com
+
+# Report email (optional override)
+REPORT_EMAIL_TO=manager@example.com
+""")
+
+# config.yaml
+config_yaml = textwrap.dedent("""
+# Global settings
+interval_seconds: 300   # how often to run checks (5 minutes)
+environment: "prod"
+
+# Thresholds for health checks
+thresholds:
+  cpu_percent: 80
+  memory_percent: 80
+  disk_percent: 85
+
+# Log scanning
+logs:
+  enabled: true
+  files:
+    - path: "/var/log/syslog"     # change per OS
+      patterns:
+        - "ERROR"
+        - "CRITICAL"
+        - "panic"
+
+# Ticketing (generic webhook)
+ticketing:
+  enabled: true
+  provider: "webhook"   # "webhook" (generic); extend later if needed
+  priority: "High"
+  project: "ITOPS"
+  component: "Infra"
+
+# Notifications
+notifications:
+  email: true
+  slack: true
+
+# Reports
+reports:
+  daily_summary_hour_local: 18   # 6 PM local
+  enabled: true
+""")
+
+# README.md
+readme = textwrap.dedent("""
+# 🔧 IT Support Automation & Monitoring System
+
+Automate common Technical Support tasks: system health checks, log scanning, auto ticket creation via API/webhook, Slack/email alerts, and a daily incident summary report.
+
+## ✨ Key Features
+- **Automated Health Checks**: CPU, memory, disk usage
+- **Log Monitoring**: Scan specified files for error patterns
+- **Auto Ticketing**: Create incidents via a generic API/webhook
+- **Notifications**: Email & Slack alerts
+- **Daily Summary Report**: Aggregated incidents emailed to the team
+- **Config-Driven**: Behavior controlled via `config.yaml` and `.env`
+
+## 🧱 Tech Stack
+- Python, psutil, requests, python-dotenv, PyYAML
+- Works on Linux/Mac/Windows (adjust log file paths & scheduler)
+
+## 📦 Quick Start
+
+```bash
+git clone https://github.com/your-username/it-support-automation.git
+cd it-support-automation
+
+# (optional) create venv
+python -m venv .venv && source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
+
+pip install -r requirements.txt
+
+# Configure
+cp .env.example .env
+# edit .env with API/Slack/SMTP credentials
+
+cp config.yaml config.local.yaml
+# edit thresholds, log paths, interval, etc.
+
+# Run once
+python src/monitor.py --config config.local.yaml
+
+# Or run looped
+python src/monitor.py --config config.local.yaml --loop
