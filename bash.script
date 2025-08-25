@@ -1,0 +1,38 @@
+Expects ENV:
+  - API_URL
+  - API_TOKEN
+"""
+if not config.get("ticketing", {}).get("enabled", False):
+    log("Ticketing disabled by config.")
+    return {"status": "disabled"}
+
+if not API_URL:
+    log("API_URL not set. Skipping ticket creation.")
+    return {"status": "skipped", "reason": "API_URL missing"}
+
+payload = {
+    "title": issue.get("title", "System Alert"),
+    "description": issue.get("description", ""),
+    "priority": config.get("ticketing", {}).get("priority", "High"),
+    "project": config.get("ticketing", {}).get("project", "ITOPS"),
+    "component": config.get("ticketing", {}).get("component", "Infra"),
+    "source": "it-support-automation",
+    "labels": issue.get("labels", []),
+    "metadata": issue.get("metadata", {}),
+}
+
+headers = {"Content-Type": "application/json"}
+if API_TOKEN:
+    headers["Authorization"] = f"Bearer {API_TOKEN}"
+
+if dry_run:
+    log(f"[DRY-RUN] Would POST ticket to {API_URL} with payload: {payload}")
+    return {"status": "dry-run", "payload": payload}
+
+try:
+    resp = requests.post(API_URL, json=payload, headers=headers, timeout=15)
+    log(f"Ticket API status: {resp.status_code}")
+    return {"status": "ok", "code": resp.status_code, "response": safe_text(resp)}
+except Exception as e:
+    log(f"Ticket creation error: {e}")
+    return {"status": "error", "error": str(e)}
