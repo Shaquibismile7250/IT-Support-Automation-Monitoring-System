@@ -1,0 +1,49 @@
+import psutil
+import requests
+import smtplib
+from datetime import datetime
+
+# Thresholds
+CPU_THRESHOLD = 80
+MEMORY_THRESHOLD = 75
+
+# Ticketing System API (example: Zendesk/Jira)
+API_URL = "https://your-ticketing-api.com/tickets"
+API_KEY = "your_api_key_here"
+
+def create_ticket(issue):
+    data = {
+        "title": "System Alert",
+        "description": issue,
+        "priority": "High"
+    }
+    response = requests.post(API_URL, json=data, headers={"Authorization": f"Bearer {API_KEY}"})
+    print("Ticket Created:", response.status_code)
+
+def send_alert(issue):
+    sender = "alert@company.com"
+    receiver = "support@company.com"
+    message = f"Subject: System Alert\n\n{issue}"
+    
+    with smtplib.SMTP("smtp.company.com", 587) as server:
+        server.starttls()
+        server.login("user", "password")
+        server.sendmail(sender, receiver, message)
+
+def monitor_system():
+    cpu = psutil.cpu_percent()
+    memory = psutil.virtual_memory().percent
+    issue = None
+
+    if cpu > CPU_THRESHOLD:
+        issue = f"High CPU Usage Detected: {cpu}%"
+    elif memory > MEMORY_THRESHOLD:
+        issue = f"High Memory Usage Detected: {memory}%"
+    
+    if issue:
+        create_ticket(issue)
+        send_alert(issue)
+        print(f"[{datetime.now()}] {issue}")
+
+if __name__ == "__main__":
+    monitor_system()
